@@ -1,0 +1,55 @@
+{
+    "prenit": "full",
+    "architecture": "normal",
+    "debug": true,
+    "api_url": "http://IP-ADDRESS:8000/api/",
+    "api_token": "xxxxxxxxxxx",
+    "api_use_token": "config",
+    "video_actions_list":
+    [
+        "video_selfie_left",
+        "video_selfie_right",
+        "video_selfie_down",
+        "video_selfie_high",
+        "video_selfie_scan",
+        "video_selfie_smile",
+        "video_selfie_eyes",
+        "video_selfie_blank",
+        "video_selfie_best"
+    ],
+    "video_required_actions_list":
+    [
+        "video_selfie_blank"
+    ],
+    "photo_actions_list":
+    [
+        "photo_id_front",
+        "photo_id_back",
+        "photo_doc_custom"
+    ],
+    "photo_source":
+    [
+        "capture"
+    ],
+    "actions_default_importance": false,
+    "actions_default":
+    {
+        "video_count": 1,
+        "photo_front": true,
+        "photo_back": true
+    },
+    "analyses":
+    {
+        "quality": true,
+        "biometry": true,
+        "documents": true
+    },
+    "extract_best_shot": true,
+    "save_lossless_frame": true,
+    "delete_old_sessions": true,
+    "delete_old_sessions_offset_minutes": 120,
+    "result_mode": "safe",
+    "load_3d_mask": false,
+    "enable_3d_mask": false,
+    "video_file_format": "zip"
+}

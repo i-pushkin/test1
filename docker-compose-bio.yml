@@ -1,0 +1,126 @@
+version: "3.4"
+
+# api-cs v0.1
+
+x-logging:
+  &default-logging
+  driver: "json-file"
+  options:
+    max-size: 512m 
+    max-file: 3
+    compress: "true"
+
+services:
+
+#######################################
+#
+# BIO CONPONENT
+#
+#######################################
+
+  oz-tfss:
+    container_name: oz-tfss
+    image: ozforensics/tensorflow-serving:2.5_lic_1.1.4-4_opt
+    environment:
+      - TF_ENABLE_ONEDNN_OPTS=0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/v1/models/dummy"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 600s      
+    volumes:
+      - ./data/tfss/models:/models
+      - ./configs/tfss/license.key:/license.key
+      - ./configs/tfss/prometheus.conf:/prometheus.conf
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    logging: *default-logging
+    depends_on:
+      oz-bio-init: 
+        condition: service_completed_successfully 
+
+
+#######################################
+#
+# BIO INITER
+#
+#######################################
+
+  oz-bio-init:
+    container_name: oz-bio-init
+    image: ozforensics/oz-bio-init:1.0.10
+    environment:
+      - FTP_SERVER_HOST=${UPDATER_FTP_SERVER_HOST}
+      - FTP_SERVER_PORT=${UPDATER_FTP_PORT}
+      - FTP_USER_NAME=${UPDATER_FTP_USER_NAME}
+      - FTP_USER_PASSWORD=${UPDATER_FTP_USER_PASSWORD}
+      - CLEAN_DIRS_FIRST=${UPDATER_CLEAN_DIRS_FIRST}
+      - FTP_USE_PASSIVE_MODE=${UPDATER_FTP_USE_PASSIVE_MODE}
+    volumes:  
+      - ./data/tfss/tmp:/app/downloads:rw
+      - ./data/tfss/models:/app/models:rw
+
+#######################################
+#
+# BIO UPDATER
+#
+#######################################
+
+  oz-bio-updater:
+    container_name: oz-bio-updater
+    deploy:
+      resources:
+        limits:
+          memory: 500M
+        reservations:
+          memory: 500M
+    image: ozforensics/oz-bio-deploy:2.0.8
+    environment:
+      - BIO_ADMIN_HOST=${UPDATER_BIO_ADMIN_HOST}
+      - CLIENT_TOKEN=${UPDATER_CLIENT_TOKEN}
+      - START_FTP=${UPDATER_START_FTP}
+      - FTP_PORT=${UPDATER_FTP_PORT}
+      - CHECK_UPDATES_ONCE=${UPDATER_CHECK_UPDATES_ONCE}
+      - CHECK_UPDATES_PERIOD=${UPDATER_CHECK_UPDATES_PERIOD}
+      - PUBLISHED_PATH=${UPDATER_PUBLISHED_PATH}
+      - MODELS_DIRECTORY=${UPDATER_MODELS_DIRECTORY}
+      - MODELS_ARCHIVE_NAME=${UPDATER_MODELS_ARCHIVE_NAME}
+      - FTP_USER_NAME=${UPDATER_FTP_USER_NAME}
+      - FTP_USER_PASSWORD=${UPDATER_FTP_USER_PASSWORD}
+      - RESTART_PODS=${UPDATER_RESTART_PODS}
+      - FTP_PERMIT_FOREIGN_ADDRESSES=${UPDATER_FTP_PERMIT_FOREIGN_ADDRESSES}
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/8521"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - ./data/tfss/updater:/app/models:rw
+    restart: unless-stopped
+    ports:
+      - "8521:8521"
+      - "60000-60100:60000-60100"      
+
+      
+##########################################
+#
+# BIO LOADBALANCER
+#
+##########################################
+
+  # bioloadbalancer:
+  #   image: nginx:1.27.3
+  #   container_name: bioloadbalancer
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "nginx -t || exit 1"]
+  #     interval: 60s
+  #     timeout: 5s
+  #     retries: 3
+  #   ports:
+  #     - "9501:9501"       
+  #   volumes:
+  #     - ./configs/nginx/loadbalancer.conf:/etc/nginx/conf.d/loadbalancer.conf:ro
+  #   restart: always

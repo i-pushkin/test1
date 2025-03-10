@@ -1,0 +1,21 @@
+version: '3.3'
+services:
+  websdk:
+    container_name: websdk
+    image: ozforensics/oz-webliveness:1.6.16
+    volumes:
+      - ./configs/websdk/app_config.json:/var/www/html/core/app_config.json
+      - ./data/websdk/session_data:/var/www/html/core/session_data
+      - ./data/websdk/logs:/var/www/html/logs
+      - ./configs/websdk/license.json:/var/www/html/license.json
+    environment:
+      - WA_CORS_ORIGINS=*
+      - WA_CORS_METHODS='GET, POST, OPTIONS'
+      - WA_CORS_HEADERS='DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type'
+      - WA_SSL_CERT_ADD='True'
+    ports:
+      - 8080:80
+      - 15080:443
+    restart: unless-stopped
+
+
